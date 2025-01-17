@@ -1,0 +1,373 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Königsberg Köprüsü Oyunu</title>
+    <style>
+        /* Genel stil ayarları */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            background-color: #f0f0f0;
+            font-family: Arial, sans-serif;
+        }
+
+        /* Giriş ekranı */
+        .giris-ekrani {
+            text-align: center;
+            max-width: 90%;
+            padding: 20px;
+            background-color: white;
+            border-radius: 10px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+            margin-bottom: 20px;
+        }
+
+        .giris-ekrani h1 {
+            font-size: 32px;
+            font-weight: bold;
+            color: #228B22;
+            margin-bottom: 20px;
+        }
+
+        .giris-ekrani p {
+            font-size: 18px;
+            color: #333;
+            line-height: 1.6;
+            margin-bottom: 20px;
+        }
+
+        .giris-ekrani .soru {
+            font-size: 20px;
+            font-weight: bold;
+            color: #228B22;
+            margin-top: 20px;
+        }
+
+        .giris-ekrani button {
+            margin-top: 20px;
+            padding: 10px 20px;
+            font-size: 16px;
+            cursor: pointer;
+            background-color: #228B22;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            margin: 10px;
+        }
+
+        .giris-ekrani button:hover {
+            background-color: #1c6b1c;
+        }
+
+        /* Oyun ekranı */
+        .oyun-ekrani {
+            display: none;
+            position: relative;
+            width: 90%;
+            max-width: 800px;
+            height: 90vh;
+            max-height: 900px;
+            background: linear-gradient(180deg, #87CEEB, #ADD8E6);
+            box-shadow: 0 0 20px rgba(0, 0, 255, 0.3);
+            overflow: hidden;
+        }
+
+        /* Yeşil bölgeler */
+        .ust-yesil, .alt-yesil {
+            position: absolute;
+            left: 0;
+            width: 100%;
+            height: 30%;
+            background: linear-gradient(180deg, #32CD32, #228B22);
+            box-shadow: 0 4px 10px rgba(0, 100, 0, 0.3);
+        }
+
+        .ust-yesil {
+            top: 0;
+        }
+
+        .alt-yesil {
+            bottom: 0;
+        }
+
+        /* Adalar */
+        .ada {
+            position: absolute;
+            background-color: #228B22;
+            top: 50%;
+            transform: translateY(-50%);
+            border-radius: 50%;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+        }
+
+        .ada1 {
+            left: 5%;
+            width: 25%;
+            height: 20%;
+        }
+
+        .ada2 {
+            right: 5%;
+            width: 25%;
+            height: 20%;
+        }
+
+        /* Köprüler */
+        .kopru {
+            position: absolute;
+            background-color: #8B4513;
+            cursor: pointer;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3);
+        }
+
+        .kopru.dikey {
+            width: 5%;
+            height: 12%;
+        }
+
+        .kopru.yatay {
+            width: 51%;
+            height: 6%;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+        }
+
+        .kopru.ada1-ada2 {
+            width: 35%;
+            height: 6%;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+        }
+
+        /* Çizgi (fare ile çizim) */
+        .cizgi {
+            position: absolute;
+            background-color: black;
+            height: 6px;
+            width: 6px;
+            border-radius: 50%;
+            pointer-events: none;
+        }
+
+        /* Butonlar */
+        .butonlar {
+            margin-top: 20px;
+            text-align: center;
+            display: none; /* Giriş ekranında butonları gizle */
+        }
+
+        .temizle-butonu, .geri-don-butonu {
+            padding: 10px 20px;
+            font-size: 16px;
+            cursor: pointer;
+            background-color: #228B22;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            margin: 10px;
+        }
+
+        .temizle-butonu:hover, .geri-don-butonu:hover {
+            background-color: #1c6b1c;
+        }
+
+        /* Uyarı mesajı */
+        .uyari-mesaji {
+            display: none;
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 40px;
+            font-weight: bold;
+            color: red;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
+            z-index: 1000;
+            white-space: nowrap;
+        }
+    </style>
+</head>
+<body>
+    <!-- Giriş ekranı -->
+    <div class="giris-ekrani" id="giris-ekrani">
+        <h1>EULER TURU</h1>
+        <p>
+            18. yüzyılda Königsberg şehrinde, Pregel Nehri üzerine kurulmuş yedi köprü, şehrin dört ana bölgesini birbirine bağlıyordu. Şehir halkı arasında insanların kafasını uzun süre meşgul eden ancak kimsenin kesin bir cevap bulamadığı bir soru dolaşıyordu.
+        </p>
+        <div class="soru">Acaba her köprüden yalnızca bir kez geçerek, tüm şehri dolaşmak mümkün müdür?</div>
+        <button id="kolay-butonu">KOLAY</button>
+        <button id="orta-butonu">ORTA</button>
+        <button id="zor-butonu">ZOR</button>
+    </div>
+
+    <!-- Kolay oyun ekranı -->
+    <div class="oyun-ekrani" id="kolay-oyun-ekrani">
+        <div class="ust-yesil">
+            <div class="uyari-mesaji" id="uyari-mesaji">Suya düştünüz! Tekrar deneyin.</div>
+        </div>
+        <div class="ada ada1"></div>
+        <div class="ada ada2"></div>
+        <!-- Kolay modda dikey köprüler -->
+        <div class="kopru dikey" style="top: 30%; left: 15%; height: 12%;"></div>
+        <div class="kopru dikey" style="bottom: 15%; left: 15%; height: 27%;"></div>
+        <div class="kopru dikey" style="top: 30%; right: 15%; height: 12%;"></div>
+        <div class="kopru yatay"></div>
+        <div class="kopru ada1-ada2"></div>
+        <div class="alt-yesil"></div>
+    </div>
+
+    <!-- Orta oyun ekranı -->
+    <div class="oyun-ekrani" id="orta-oyun-ekrani">
+        <div class="ust-yesil">
+            <div class="uyari-mesaji" id="uyari-mesaji">Suya düştünüz! Tekrar deneyin.</div>
+        </div>
+        <div class="ada ada1"></div>
+        <div class="ada ada2"></div>
+        <!-- Orta modda dikey köprüler -->
+        <div class="kopru dikey" style="top: 30%; left: 15%; height: 12%;"></div>
+        <div class="kopru dikey" style="bottom: 15%; left: 15%; height: 27%;"></div>
+        <div class="kopru dikey" style="bottom: 15%; left: 15%; height: 27%;"></div>
+        <div class="kopru dikey" style="top: 30%; right: 15%; height: 12%;"></div>
+        <div class="kopru dikey" style="bottom: 15%; right: 15%; height: 27%;"></div>
+        <div class="kopru yatay"></div>
+        <div class="kopru ada1-ada2"></div>
+        <div class="alt-yesil"></div>
+    </div>
+
+    <!-- Zor oyun ekranı -->
+    <div class="oyun-ekrani" id="zor-oyun-ekrani">
+        <div class="ust-yesil">
+            <div class="uyari-mesaji" id="uyari-mesaji">Suya düştünüz! Tekrar deneyin.</div>
+        </div>
+        <div class="ada ada1"></div>
+        <div class="ada ada2"></div>
+        <!-- Zor modda dikey köprüler -->
+        <div class="kopru dikey" style="top: 30%; left: 10%; height: 12%;"></div>
+        <div class="kopru dikey" style="top: 30%; left: 20%; height: 12%;"></div> <!-- Sağdaki köprü soldakine yaklaştırıldı -->
+        <div class="kopru dikey" style="bottom: 15%; left: 10%; height: 27%;"></div>
+        <div class="kopru dikey" style="bottom: 15%; left: 20%; height: 27%;"></div> <!-- Sağdaki köprü soldakine yaklaştırıldı -->
+        <!-- Sağdaki iki dikey köprü -->
+        <div class="kopru dikey" style="top: 30%; right: 15%; height: 12%;"></div>
+        <div class="kopru dikey" style="bottom: 15%; right: 15%; height: 27%;"></div>
+        <div class="kopru yatay"></div>
+        <div class="kopru ada1-ada2"></div>
+        <div class="alt-yesil"></div>
+    </div>
+
+    <!-- Temizle butonu ve Giriş Ekranına Dön butonu -->
+    <div class="butonlar">
+        <button class="temizle-butonu" id="temizle-butonu">Temizle</button>
+        <button class="geri-don-butonu" id="geri-don-butonu">Giriş Ekranına Dön</button>
+    </div>
+
+    <script>
+        const girisEkrani = document.getElementById('giris-ekrani');
+        const kolayOyunEkrani = document.getElementById('kolay-oyun-ekrani');
+        const ortaOyunEkrani = document.getElementById('orta-oyun-ekrani');
+        const zorOyunEkrani = document.getElementById('zor-oyun-ekrani');
+        const temizleButonu = document.getElementById('temizle-butonu');
+        const geriDonButonu = document.getElementById('geri-don-butonu');
+        const butonlar = document.querySelector('.butonlar');
+        let cizimYapiliyor = false;
+
+        // Oyun ekranlarını göster
+        document.querySelectorAll('#kolay-butonu, #orta-butonu, #zor-butonu').forEach(button => {
+            button.addEventListener('click', () => {
+                girisEkrani.style.display = 'none';
+                document.getElementById(button.id.replace('-butonu', '-oyun-ekrani')).style.display = 'block';
+                butonlar.style.display = 'block'; // Butonları göster
+            });
+        });
+
+        // Geri dön butonu
+        geriDonButonu.addEventListener('click', () => {
+            document.querySelectorAll('.oyun-ekrani').forEach(ekran => ekran.style.display = 'none');
+            butonlar.style.display = 'none'; // Butonları gizle
+            girisEkrani.style.display = 'block';
+        });
+
+        // Çizim mekanizması
+        function oyunEkraniCizim(oyunEkrani) {
+            const uyariMesaji = oyunEkrani.querySelector('.uyari-mesaji');
+
+            oyunEkrani.addEventListener('mousedown', (e) => {
+                cizimYapiliyor = true;
+                noktaCiz(e, oyunEkrani, uyariMesaji);
+            });
+
+            oyunEkrani.addEventListener('mousemove', (e) => {
+                if (cizimYapiliyor) {
+                    noktaCiz(e, oyunEkrani, uyariMesaji);
+                }
+            });
+
+            oyunEkrani.addEventListener('mouseup', () => {
+                cizimYapiliyor = false;
+            });
+        }
+
+        function noktaCiz(e, oyunEkrani, uyariMesaji) {
+            const oyunEkraniRect = oyunEkrani.getBoundingClientRect();
+            const x = e.clientX - oyunEkraniRect.left;
+            const y = e.clientY - oyunEkraniRect.top;
+
+            // Çizilebilir alanlar (köprüler, adalar, yeşil bölgeler)
+            const cizilebilirAlanlar = [
+                ...oyunEkrani.querySelectorAll('.kopru, .ada, .ust-yesil, .alt-yesil')
+            ];
+
+            // Çizilen nokta çizilebilir alanlarda mı?
+            const cizilebilirAlanlardaMi = cizilebilirAlanlar.some(alan => {
+                const alanRect = alan.getBoundingClientRect();
+                return (
+                    x >= alanRect.left - oyunEkraniRect.left &&
+                    x <= alanRect.right - oyunEkraniRect.left &&
+                    y >= alanRect.top - oyunEkraniRect.top &&
+                    y <= alanRect.bottom - oyunEkraniRect.top
+                );
+            });
+
+            // Eğer çizim çizilebilir alanların dışındaysa
+            if (!cizilebilirAlanlardaMi) {
+                uyariMesaji.style.display = 'block'; // Uyarı mesajını göster
+
+                // Tüm çizgileri temizle
+                const cizgiler = oyunEkrani.querySelectorAll('.cizgi');
+                cizgiler.forEach(cizgi => cizgi.remove());
+
+                return; // Çizim yapma
+            } else {
+                uyariMesaji.style.display = 'none'; // Uyarı mesajını gizle
+            }
+
+            const nokta = document.createElement('div');
+            nokta.className = 'cizgi';
+            nokta.style.left = `${x - 3}px`;
+            nokta.style.top = `${y - 3}px`;
+            oyunEkrani.appendChild(nokta);
+        }
+
+        // Temizle butonu
+        temizleButonu.addEventListener('click', () => {
+            document.querySelectorAll('.cizgi').forEach(cizgi => cizgi.remove());
+            document.querySelectorAll('.uyari-mesaji').forEach(uyari => uyari.style.display = 'none');
+        });
+
+        // Tüm oyun ekranları için çizim mekanizmasını başlat
+        document.querySelectorAll('.oyun-ekrani').forEach(oyunEkrani => oyunEkraniCizim(oyunEkrani));
+    </script>
+</body>
+</html>
